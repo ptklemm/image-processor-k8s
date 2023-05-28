@@ -1,0 +1,17 @@
+services:
+  site:
+    image: img-proc-site
+    build: ./site
+    ports:
+      - 80:80
+  api:
+    image: img-proc-api
+    build: ./api
+    ports:
+      - 8080:8080
+    volumes:
+      - uploads:/mnt/uploads:rw
+  rabbitmq:
+    image: rabbitmq:latest
+volumes:
+  uploads:
