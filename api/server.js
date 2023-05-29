@@ -1,19 +1,17 @@
 const cors = require("cors");
 const express = require("express");
 const app = express();
+const router = require("./router");
 
-global.__basedir = __dirname;
 
-app.use(cors({
-    origin: "http://localhost:8081"
-}));
+app.use(cors());
 
-const initRoutes = require("./routes");
+// app.use(express.urlencoded({ extended: true }));
+app.use(express.json());
 
-app.use(express.urlencoded({ extended: true }));
-initRoutes(app);
+app.use('/api', router);
 
-let port = 8080;
+const port = 8080;
 app.listen(port, () => {
     console.log(`Running at localhost:${port}`);
 });

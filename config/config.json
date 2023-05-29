@@ -1,0 +1,16 @@
+{
+    "App": {
+        "Name": "Image Processor",
+        "Version": "0.1.0"
+    },
+    "ApiHost": "http://localhost:8080",
+    "Upload": {
+        "PartSizeMB": 5,
+        "MaxSizeMB": 50,
+        "AcceptedFileTypes": [
+            "image/png",
+            "image/jpeg",
+            "image/bmp"
+        ]
+    }
+}
