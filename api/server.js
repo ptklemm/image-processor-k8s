@@ -1,17 +1,29 @@
-const cors = require("cors");
-const express = require("express");
-const app = express();
-const router = require("./router");
+import "dotenv/config";
+import express from "express";
+import cors from "cors";
+import initApiRouter from "./router/index.js";
+import db from "./db/client.js";
 
+(async () => {
+    console.log("Image Processor API starting.");
 
-app.use(cors());
+    console.log("Loading configuration...");
+    const configuration = await db.collection("configuration").findOne({ _id: 1 });
+    console.log("Loaded configuration: ", configuration);
 
-// app.use(express.urlencoded({ extended: true }));
-app.use(express.json());
+    const app = express();
 
-app.use('/api', router);
+    console.log("CORS is enabled.")
+    app.use(cors());
 
-const port = 8080;
-app.listen(port, () => {
-    console.log(`Running at localhost:${port}`);
-});
+    // app.use(express.urlencoded({ extended: true }));
+    app.use(express.json());
+
+    console.log("Initializing API routes.");
+    app.use("/api", initApiRouter(configuration));
+
+    const PORT = process.env.APP_PORT || 8080;
+    app.listen(PORT, () => {
+        console.log(`Image Processor API listening on localhost:${PORT}`);
+    });
+})();
