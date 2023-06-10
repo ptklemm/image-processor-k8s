@@ -1,12 +1,13 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { ImgProcConfiguration } from './types';
+import { ImgProcConfiguration } from '../types';
+import { defaultConfig } from '../defaultConfig';
 import {
     MBtoBytes,
     bytesToMB,
-} from './utilities';
+} from '../utilities';
 import {
     ImgProcApiConnection
-} from './connection';
+} from '../connection';
 import { Helmet } from "react-helmet";
 import Container from 'react-bootstrap/Container';
 import Row from 'react-bootstrap/Row';
@@ -16,23 +17,12 @@ import Form from 'react-bootstrap/Form';
 import Button from 'react-bootstrap/Button';
 
 function App() {
-    const [configuration, setConfiguration] = useState<ImgProcConfiguration>({
-        App: {
-            Name: 'Image Processor',
-            Version: 'x.y.z'
-        },
-        ApiHost: 'http://localhost:8080',
-        Upload: {
-            PartSizeMB: 5,
-            MaxSizeMB: 50,
-            AcceptedFileTypes: ['image/bmp', 'image/jpeg', 'image.png']
-        }
-    });
+    const [configuration, setConfiguration] = useState<ImgProcConfiguration>(defaultConfig);
     const [selectedFile, setSelectedFile] = useState<File | undefined>(undefined);
 
     const api = useMemo(() => {
-        return new ImgProcApiConnection(process.env.REACT_APP_API_HOST || configuration.ApiHost);
-    }, [configuration.ApiHost]);
+        return new ImgProcApiConnection(process.env.REACT_APP_API_HOST);
+    }, []);
 
     useEffect(() => {
         api.getConfiguration()
@@ -64,21 +54,9 @@ function App() {
         }
     }
 
-    const requiresMultipartFileUpload = (file: File) => {
-        return file.size > MBtoBytes(configuration.Upload.PartSizeMB) ? true : false;
-    }
-
     const handleSubmit = async () => {
-        if (requiresMultipartFileUpload(selectedFile as File)) {
-            await api.processMultipartFileUpload(selectedFile as File);
-        } else {
-            await api.fileUpload(selectedFile as File);
-        }
+        await api.fileUpload(selectedFile as File);
     };
-
-    const testMultipart = async () => {
-        await api.processMultipartFileUpload(selectedFile as File);
-    }
 
     return (
         <React.Fragment>
@@ -89,7 +67,7 @@ function App() {
                 <Row>
                     <Col>
                         <Card className='w-50 m-4'>
-                            <Card.Header as="h5">{configuration.App.Name} {configuration.App.Version}</Card.Header>
+                            <Card.Header><Card.Title>{configuration.App.Name} {configuration.App.Version}</Card.Title></Card.Header>
                             <Card.Body>
                                 <Form noValidate encType="multipart/form-data">
                                     <Form.Group controlId="formFile" className="mb-3">
@@ -108,9 +86,6 @@ function App() {
                             <Card.Footer>
                                 <Button variant="primary" type="submit" disabled={!selectedFile} onClick={handleSubmit}>
                                     Upload
-                                </Button>
-                                <Button variant="primary" type="submit" disabled={!selectedFile} onClick={testMultipart}>
-                                    Test Multipart Upload
                                 </Button>
                             </Card.Footer>
                         </Card>

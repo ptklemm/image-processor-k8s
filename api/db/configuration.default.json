@@ -7,7 +7,7 @@
     "ApiHost": "http://localhost:8080",
     "Upload": {
         "PartSizeMB": 5,
-        "MaxSizeMB": 500,
+        "MaxSizeMB": 100,
         "AcceptedFileTypes": [
             "image/png",
             "image/jpeg",

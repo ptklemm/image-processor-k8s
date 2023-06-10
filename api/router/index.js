@@ -1,13 +1,14 @@
 import express from "express";
-import configRouter from "./config.router.js";
+import initConfigRouter from "./config.router.js";
+import adminRouter from "./admin.router.js";
 import initFileRouter from "./file.router.js";
 
-const initApiRouter = (configuration) => {
+const initApiRouter = (configuration, dbClient, amqpChannel) => {
     const router = express.Router();
 
-    router.use("/configuration", configRouter);
-    // router.use("/admin", require("./admin.router"));
-    router.use("/file", initFileRouter(configuration));
+    router.use("/configuration", initConfigRouter(dbClient));
+    router.use("/admin", adminRouter);
+    router.use("/file", initFileRouter(configuration, amqpChannel));
 
     return router;
 }

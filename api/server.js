@@ -1,29 +1,52 @@
 import "dotenv/config";
+import { logger } from './util/logger.js';
+import process from 'node:process';
 import express from "express";
 import cors from "cors";
+import initDbClient from "./db/dbClient.js";
+import initAMQPClient from "./amqp/amqpClient.js";
 import initApiRouter from "./router/index.js";
-import db from "./db/client.js";
+
+process.on('SIGINT', () => {
+    process.exit(0);
+});
+
+process.on('SIGQUIT', () => {
+    process.exit(0);
+});
+
+process.on('SIGTERM', () => {
+    process.exit(0);
+});
 
 (async () => {
-    console.log("Image Processor API starting.");
+    logger.info("Image Processor API starting.");
 
-    console.log("Loading configuration...");
-    const configuration = await db.collection("configuration").findOne({ _id: 1 });
-    console.log("Loaded configuration: ", configuration);
+    const dbClient = await initDbClient();
+
+    logger.info("Loading configuration...");
+    const configuration = await dbClient.collection("configuration").findOne({ _id: 1 });
+    logger.info("Loaded configuration: ", configuration);
+
+    const amqpChannel = await initAMQPClient();
 
     const app = express();
 
-    console.log("CORS is enabled.")
+    logger.info("CORS is enabled.")
     app.use(cors());
 
-    // app.use(express.urlencoded({ extended: true }));
     app.use(express.json());
 
-    console.log("Initializing API routes.");
-    app.use("/api", initApiRouter(configuration));
+    logger.info("Initializing API routes.");
+    app.use("/api", initApiRouter(configuration, dbClient, amqpChannel));
+    logger.info("API routes initialized.");
+
+    process.on('exit', () => {
+        logger.info("Image Processor API shutting down.");
+    });
 
     const PORT = process.env.APP_PORT || 8080;
     app.listen(PORT, () => {
-        console.log(`Image Processor API listening on localhost:${PORT}`);
+        logger.info(`Image Processor API listening on localhost:${PORT}`);
     });
 })();

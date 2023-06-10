@@ -1,21 +1,4 @@
 services:
-  api:
-    image: img-proc-api
-    build: ./api
-    ports:
-      - "8080:8080"
-    volumes:
-      - uploads:/mnt/uploads:rw
-    networks:
-      - img-proc-net
-    environment:
-      - APP_PORT=8080
-      - DB_HOST=postgres-dev
-      - DB_PORT=5432
-      - DB_NAME=imgproc
-      - DB_USER=postgres
-      - DB_PASSWORD=Welcome$
-      - UPLOADS_PATH=/mnt/uploads
   site:
     image: img-proc-site
     build: ./site
@@ -25,12 +8,45 @@ services:
       - "80:80"
     networks:
       - img-proc-net
-  rabbitmq:
-    image: rabbitmq
+  api:
+    image: img-proc-api
+    build: ./api
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+    volumes:
+      - img-proc-uploads:/mnt/uploads:rw
     networks:
       - img-proc-net
+    secrets:
+      - mongodb_url
+    environment:
+      - APP_PORT=8080
+      - MONGODB_URL_FILE=/run/secrets/mongodb_url
+      - DB_NAME=imgproc
+      - RABBITMQ_URL=amqp://rabbitmq
+      - UPLOADS_PATH=/mnt/uploads
+  rabbitmq:
+    image: rabbitmq:management
+    expose:
+      - "5672"
+    ports:
+      - "15672:15672"
+    networks:
+      - img-proc-net
+    healthcheck:
+      test: rabbitmq-diagnostics -q ping
+      interval: 5s
+      timeout: 5s
+      retries: 3
+secrets:
+  mongodb_url:
+    file: mongodb_url.txt
 volumes:
-  uploads:
+  img-proc-uploads:
+    external: true
 networks:
   img-proc-net:
     name: img-proc-net

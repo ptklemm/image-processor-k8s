@@ -1,5 +1,5 @@
 FROM node:18.16-alpine
-WORKDIR /usr/src/app
+WORKDIR /usr/src/img-proc-api
 COPY package*.json ./
 # npm ci makes sure the exact versions in the lockfile gets installed
 RUN npm ci --omit=dev
