@@ -14,7 +14,7 @@ const storage = multer.diskStorage({
     }
 });
 
-const initFileRouter = (configuration, amqpChannel) => {
+const initFileRouter = (configuration, dbClient, amqpChannel) => {
     const fileRouter = express.Router();
 
     const { MaxSizeMB, AcceptedFileTypes } = configuration.Upload;
@@ -32,20 +32,34 @@ const initFileRouter = (configuration, amqpChannel) => {
 
         logger.info(`Received File (From: ${req.ip}, FileName: ${req.file.originalname}, UploadID: ${req.file.filename}, Path: ${req.file.path}, Size: ${req.file.size})`);
 
-        const message = {
-            fileName: req.file.originalname,
+        const uploadMessage = {
             uploadId: req.file.filename,
-            path: req.file.path,
-            size: req.file.size
+            fileName: req.file.originalname,
+            uploadPath: req.file.path,
+            processedPath: null,
+            originalSize: req.file.size,
+            processedSize: null,
+            status: "Uploaded"
         }
 
-        await amqpChannel.sendToQueue('new-upload', Buffer.from(JSON.stringify(message)), { persistent: true });
+        const result = await dbClient.collection("uploads").insertOne(uploadMessage);
 
-        return res.status(200).send({ status: "Uploaded", image: req.file.originalname, uploadId: req.file.filename });
+        if (result && result.acknowledged == true) {
+            await amqpChannel.sendToQueue('uploaded', Buffer.from(JSON.stringify(uploadMessage)), { persistent: true });
+            return res.status(200).send({ status: uploadMessage.status, image: uploadMessage.fileName, uploadId: uploadMessage.uploadId });
+        }
     });
 
-    fileRouter.get("/:uploadId", (req, res) => {
+    fileRouter.get("/upload/:uploadId", async (req, res) => {
+        const result = await dbClient.collection("uploads").findOne({ uploadId: req.params.uploadId });
 
+        if (result) {
+            if (result.status == 'Processing') {
+                return res.status(200).send({ status: result.status, image: result.fileName, uploadId: result.uploadId });
+            } else if (result.status == 'Completed') {
+                return res.status(200).send({ status: result.status, image: result.fileName, uploadId: result.uploadId });
+            }
+        }
     });
 
     return fileRouter;

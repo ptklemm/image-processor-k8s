@@ -28,7 +28,7 @@ process.on('SIGTERM', () => {
     const configuration = await dbClient.collection("configuration").findOne({ _id: 1 });
     logger.info("Loaded configuration: ", configuration);
 
-    const amqpChannel = await initAMQPClient();
+    const amqpChannel = await initAMQPClient(dbClient);
 
     const app = express();
 

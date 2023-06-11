@@ -4,13 +4,13 @@ import adminRouter from "./admin.router.js";
 import initFileRouter from "./file.router.js";
 
 const initApiRouter = (configuration, dbClient, amqpChannel) => {
-    const router = express.Router();
+    const apiRouter = express.Router();
 
-    router.use("/configuration", initConfigRouter(dbClient));
-    router.use("/admin", adminRouter);
-    router.use("/file", initFileRouter(configuration, amqpChannel));
+    apiRouter.use("/configuration", initConfigRouter(dbClient));
+    apiRouter.use("/admin", adminRouter);
+    apiRouter.use("/file", initFileRouter(configuration, dbClient, amqpChannel));
 
-    return router;
+    return apiRouter;
 }
 
 export default initApiRouter;

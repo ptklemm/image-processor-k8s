@@ -19,6 +19,7 @@ import Button from 'react-bootstrap/Button';
 function App() {
     const [configuration, setConfiguration] = useState<ImgProcConfiguration>(defaultConfig);
     const [selectedFile, setSelectedFile] = useState<File | undefined>(undefined);
+    const [uploadId, setUploadId] = useState<string | undefined>(undefined);
 
     const api = useMemo(() => {
         return new ImgProcApiConnection(process.env.REACT_APP_API_HOST);
@@ -54,8 +55,24 @@ function App() {
         }
     }
 
-    const handleSubmit = async () => {
-        await api.fileUpload(selectedFile as File);
+    const handleUpload = async () => {
+        const response = await api.fileUpload(selectedFile as File);
+
+        if (response) {
+            console.log(response);
+            if (response.status === 200) {
+                setUploadId(response.data.uploadId);
+                setSelectedFile(undefined);
+            }
+        }
+    };
+
+    const handleCheckStatus = async () => {
+        const response = await api.getUploadStatus(uploadId as string);
+
+        if (response) {
+            console.log(response);
+        }
     };
 
     return (
@@ -84,8 +101,11 @@ function App() {
                                 </Form>
                             </Card.Body>
                             <Card.Footer>
-                                <Button variant="primary" type="submit" disabled={!selectedFile} onClick={handleSubmit}>
+                                <Button variant="primary" type="submit" disabled={!selectedFile} onClick={handleUpload}>
                                     Upload
+                                </Button>
+                                <Button variant="primary" type="submit" disabled={!uploadId} onClick={handleCheckStatus}>
+                                    Check Status
                                 </Button>
                             </Card.Footer>
                         </Card>

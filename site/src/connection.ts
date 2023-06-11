@@ -37,6 +37,10 @@ export class ImgProcApiConnection {
         return await this.tryAsyncHttpRequest(HttpMethod.Post, '/file/upload', ContentType.FormData, { image: file });
     }
 
+    public async getUploadStatus(uploadId: string) {
+        return await this.tryAsyncHttpRequest(HttpMethod.Get, `/file/upload/${uploadId}`);
+    }
+
     private async tryAsyncHttpRequest(method: HttpMethod, url: string, contentType: ContentType = ContentType.Text, data?: object) {
         let response;
 

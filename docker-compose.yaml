@@ -33,6 +33,9 @@ services:
   worker:
     image: img-proc-worker
     build: ./worker
+    deploy:
+      mode: replicated
+      replicas: 2
     depends_on:
       rabbitmq:
         condition: service_healthy

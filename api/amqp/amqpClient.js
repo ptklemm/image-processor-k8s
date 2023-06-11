@@ -1,7 +1,7 @@
 import amqp from "amqplib";
 import { logger } from '../util/logger.js';
 
-async function initAMQPClient() {
+async function initAMQPClient(dbClient) {
     let amqpClient;
     let channel;
 
@@ -21,17 +21,45 @@ async function initAMQPClient() {
         await amqpClient.close();
     });
 
-    logger.info("Connecting to channel...");
+    logger.info("Creating channel...");
     try {
         channel = await amqpClient.createChannel();
     } catch (err) {
         console.error(err);
         process.exit(1);
     }
-    logger.info("Channel connected.");
+    logger.info("Channel created.");
 
-    channel.assertQueue('new-upload', {
+    channel.assertQueue('uploaded', {
         durable: true
+    });
+
+    channel.assertQueue('processing', {
+        durable: true
+    });
+
+    channel.assertQueue('completed', {
+        durable: true
+    });
+
+    await channel.prefetch(1);
+
+    logger.info('Waiting for incoming processing messages.');
+
+    await channel.consume('processing', (msg) => {
+        const uploadId = msg.content.toString();
+        logger.info("Received processing image message: ", uploadId);
+        dbClient.collection("uploads").updateOne({ uploadId }, { $set: { status: "Processing" } });
+        channel.ack(msg);
+    });
+
+    logger.info('Waiting for incoming completion messages.');
+
+    await channel.consume('completed', (msg) => {
+        const uploadId = msg.content.toString();
+        logger.info("Received completed image message: ", uploadId);
+        dbClient.collection("uploads").updateOne({ uploadId }, { $set: { status: "Completed" } });
+        channel.ack(msg);
     });
 
     return channel;
