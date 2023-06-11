@@ -6,6 +6,15 @@ enum HttpMethod {
     Put = "PUT"
 }
 
+enum ResponseType {
+    ArrayBuffer = 'arraybuffer',
+    Blob = 'blob',
+    Document = 'document',
+    Json = 'json',
+    Text = 'text',
+    Stream = 'stream'
+}
+
 enum ContentType {
     Text = 'text/plain',
     Json = 'application/json',
@@ -21,7 +30,7 @@ export class ImgProcApiConnection {
         this.host = host;
         this.instance = axios.create({
             baseURL: `${this.host}/api`,
-            timeout: 3000
+            timeout: 5000
         });
     }
 
@@ -34,14 +43,18 @@ export class ImgProcApiConnection {
     }
 
     public async fileUpload(file: File) {
-        return await this.tryAsyncHttpRequest(HttpMethod.Post, '/file/upload', ContentType.FormData, { image: file });
+        return await this.tryAsyncHttpRequest(HttpMethod.Post, '/file/upload', ContentType.FormData, ResponseType.Json, { image: file });
     }
 
     public async getUploadStatus(uploadId: string) {
         return await this.tryAsyncHttpRequest(HttpMethod.Get, `/file/upload/${uploadId}`);
     }
 
-    private async tryAsyncHttpRequest(method: HttpMethod, url: string, contentType: ContentType = ContentType.Text, data?: object) {
+    public async downloadFile(uploadId: string) {
+        return await this.tryAsyncHttpRequest(HttpMethod.Get, `/file/download/${uploadId}`, ContentType.Text, ResponseType.Blob);
+    }
+
+    private async tryAsyncHttpRequest(method: HttpMethod, url: string, contentType: ContentType = ContentType.Text, responseType: ResponseType = ResponseType.Json, data?: object) {
         let response;
 
         try {
@@ -49,6 +62,7 @@ export class ImgProcApiConnection {
                 method,
                 url,
                 data,
+                responseType,
                 headers: {
                     'Content-Type': contentType
                 }

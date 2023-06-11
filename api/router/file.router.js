@@ -54,11 +54,16 @@ const initFileRouter = (configuration, dbClient, amqpChannel) => {
         const result = await dbClient.collection("uploads").findOne({ uploadId: req.params.uploadId });
 
         if (result) {
-            if (result.status == 'Processing') {
-                return res.status(200).send({ status: result.status, image: result.fileName, uploadId: result.uploadId });
-            } else if (result.status == 'Completed') {
-                return res.status(200).send({ status: result.status, image: result.fileName, uploadId: result.uploadId });
-            }
+            return res.status(200).send({ status: result.status, image: result.fileName, uploadId: result.uploadId });
+        }
+    });
+
+    fileRouter.get("/download/:uploadId", async (req, res) => {
+        const result = await dbClient.collection("uploads").findOne({ uploadId: req.params.uploadId });
+
+        if (result) {
+            await dbClient.collection("uploads").updateOne({ uploadId: result.uploadId }, { $set: { status: 'Downloaded' } });
+            return res.status(200).sendFile(`${process.env.PROCESSED_PATH}/${result.uploadId}.jpg`);
         }
     });
 

@@ -75,6 +75,27 @@ function App() {
         }
     };
 
+    const handleDownload = async () => {
+        const response = await api.downloadFile(uploadId as string);
+
+        if (response) {
+            console.log(response);
+            // create file link in browser's memory
+            const href = URL.createObjectURL(response.data);
+
+            // create "a" HTML element with href to file & click
+            const link = document.createElement('a');
+            link.href = href;
+            link.setAttribute('download', `${uploadId}.jpg`); //or any other extension
+            document.body.appendChild(link);
+            link.click();
+
+            // clean up "a" element & remove ObjectURL
+            document.body.removeChild(link);
+            URL.revokeObjectURL(href);
+        }
+    };
+
     return (
         <React.Fragment>
             <Helmet>
@@ -106,6 +127,9 @@ function App() {
                                 </Button>
                                 <Button variant="primary" type="submit" disabled={!uploadId} onClick={handleCheckStatus}>
                                     Check Status
+                                </Button>
+                                <Button variant="primary" type="submit" disabled={!uploadId} onClick={handleDownload}>
+                                    Download
                                 </Button>
                             </Card.Footer>
                         </Card>
