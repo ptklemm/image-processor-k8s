@@ -18,6 +18,7 @@ services:
       - "8080:8080"
     volumes:
       - img-proc-uploads:/mnt/uploads:rw
+      - img-proc-processed:/mnt/processed:rw
     networks:
       - img-proc-net
     secrets:
@@ -26,8 +27,24 @@ services:
       - APP_PORT=8080
       - MONGODB_URL_FILE=/run/secrets/mongodb_url
       - DB_NAME=imgproc
-      - RABBITMQ_URL=amqp://rabbitmq
+      - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672
       - UPLOADS_PATH=/mnt/uploads
+      - PROCESSED_PATH=/mnt/processed
+  worker:
+    image: img-proc-worker
+    build: ./worker
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    volumes:
+      - img-proc-uploads:/mnt/uploads:rw
+      - img-proc-processed:/mnt/processed:rw
+    networks:
+      - img-proc-net
+    environment:
+      - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672
+      - UPLOADS_PATH=/mnt/uploads
+      - PROCESSED_PATH=/mnt/processed
   rabbitmq:
     image: rabbitmq:management
     expose:
@@ -38,14 +55,16 @@ services:
       - img-proc-net
     healthcheck:
       test: rabbitmq-diagnostics -q ping
-      interval: 5s
-      timeout: 5s
+      interval: 10s
+      timeout: 10s
       retries: 3
 secrets:
   mongodb_url:
     file: mongodb_url.txt
 volumes:
   img-proc-uploads:
+    external: true
+  img-proc-processed:
     external: true
 networks:
   img-proc-net:
